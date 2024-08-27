@@ -38,11 +38,12 @@ export async function onRequestGet(context) {
 }
 
 async function fetchReadmeContent(repoPath) {
-  const response = await fetch(`https://api.github.com/repos/${repoPath}/readme`, {
+  const response = await fetch(`https://api.github.com/repos/${repoPath}/contents/README.md`, {
     headers: { 'Accept': 'application/vnd.github.v3.raw' }
   });
   if (!response.ok) {
-    throw new Error('Failed to fetch README');
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch README: ${errorText}`);
   }
   return await response.text();
 }
@@ -50,7 +51,8 @@ async function fetchReadmeContent(repoPath) {
 async function fetchRepoStructure(repoPath) {
   const response = await fetch(`https://api.github.com/repos/${repoPath}/git/trees/main?recursive=1`);
   if (!response.ok) {
-    throw new Error('Failed to fetch repository structure');
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch repository structure: ${errorText}`);
   }
   const data = await response.json();
   return data.tree
@@ -82,7 +84,8 @@ Provide a brief summary of the repository, its main features, and any notable as
   });
 
   if (!response.ok) {
-    throw new Error('AI analysis failed');
+    const errorText = await response.text();
+    throw new Error(`AI analysis failed: ${errorText}`);
   }
 
   const result = await response.json();
