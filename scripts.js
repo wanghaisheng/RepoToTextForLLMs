@@ -72,7 +72,7 @@ async function fetchRepoData() {
         const response = await fetch(`/analyze?repo=${encodeURIComponent(repoUrl)}&apiKey=${encodeURIComponent(apiKey)}&model=${encodeURIComponent(selectedModel)}`);
         url='https://eatrepo.v2ray-tokyo.workers.dev'
         url='https://repototextforllms.pages.dev'
-        #const response = await fetch(`${url}/analyze?repo=${encodeURIComponent(repoUrl)}&apiKey=${encodeURIComponent(apiKey)}&model=${encodeURIComponent(selectedModel)}`);
+        //const response = await fetch(`${url}/analyze?repo=${encodeURIComponent(repoUrl)}&apiKey=${encodeURIComponent(apiKey)}&model=${encodeURIComponent(selectedModel)}`);
 
         if (!response.ok) {
             throw new Error(`API request failed with status ${response.status}`);
