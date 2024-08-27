@@ -1,0 +1,390 @@
+<html><head><base href="./"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>GitHub Repository Analyzer</title><style>
+    body {
+        font-family: 'Arial', sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f4f7f9;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        flex: 1;
+    }
+    h1, h2, h3 {
+        color: #2c3e50;
+    }
+    h1 {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    input[type="text"], input[type="password"], select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+    }
+    button {
+        background-color: #3498db;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+    }
+    button:hover {
+        background-color: #2980b9;
+    }
+    #result {
+        background-color: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .api-key-hint {
+        font-size: 14px;
+        color: #666;
+        margin-top: 5px;
+    }
+    .api-key-link {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .api-key-link:hover {
+        text-decoration: underline;
+    }
+    .tab {
+        overflow: hidden;
+        border: 1px solid #ccc;
+        background-color: #f1f1f1;
+        border-radius: 4px 4px 0 0;
+    }
+    .tab button {
+        background-color: inherit;
+        float: left;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        padding: 14px 16px;
+        transition: 0.3s;
+        font-size: 17px;
+        color: #333;
+    }
+    .tab button:hover {
+        background-color: #ddd;
+    }
+    .tab button.active {
+        background-color: #3498db;
+        color: white;
+    }
+    .tabcontent {
+        display: none;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-top: none;
+        border-radius: 0 0 4px 4px;
+    }
+    .result-section {
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        border-left: 5px solid #3498db;
+    }
+    .result-section h3 {
+        margin-top: 0;
+        color: #3498db;
+    }
+    .repo-structure {
+        font-family: monospace;
+        white-space: pre-wrap;
+        background-color: #f1f3f5;
+        padding: 10px;
+        border-radius: 4px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .readme-content {
+        background-color: #f1f3f5;
+        padding: 10px;
+        border-radius: 4px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .ai-analysis {
+        background-color: #e8f4fd;
+        padding: 15px;
+        border-radius: 4px;
+    }
+    .ai-analysis p {
+        margin-bottom: 15px;
+    }
+    .roast {
+        background-color: #fff3cd;
+        border-left: 5px solid #ffc107;
+        padding: 10px;
+        margin-top: 15px;
+        font-style: italic;
+    }
+    .loading {
+        text-align: center;
+        padding: 20px;
+        font-size: 18px;
+        color: #666;
+    }
+    .loading::after {
+        content: '...';
+        animation: dots 1.5s steps(5, end) infinite;
+        display: inline-block;
+        width: 0;
+        overflow: hidden;
+        vertical-align: bottom;
+    }
+    @keyframes dots {
+        0%, 20% {
+            color: rgba(0,0,0,0);
+            text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);
+        }
+        40% {
+            color: #666;
+            text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);
+        }
+        60% {
+            text-shadow: .25em 0 0 #666, .5em 0 0 rgba(0,0,0,0);
+        }
+        80%, 100% {
+            text-shadow: .25em 0 0 #666, .5em 0 0 #666;
+        }
+    }
+    footer {
+        background-color: #2c3e50;
+        color: #ecf0f1;
+        text-align: center;
+        padding: 10px 0;
+        font-size: 14px;
+    }
+    footer a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    footer a:hover {
+        text-decoration: underline;
+    }
+</style></head><body>
+<div class="container">
+    <h1>GitHub Repository Analyzer</h1>
+    
+    <div class="tab">
+        <button class="tablinks" onclick="openTab(event, 'Analyzer')" id="defaultOpen">Analyzer</button>
+        <button class="tablinks" onclick="openTab(event, 'Settings')">Settings</button>
+    </div>
+
+    <div id="Analyzer" class="tabcontent">
+        <div class="form-group">
+            <label for="repo-url">GitHub Repository URL:</label>
+            <input type="text" id="repo-url" placeholder="https://github.com/username/repo">
+        </div>
+        <div class="form-group">
+            <label for="model-select">Select Model:</label>
+            <select id="model-select">
+                <optgroup label="Free Models">
+                    <option value="Qwen/Qwen1.5-7B-Chat">Qwen/Qwen1.5-7B-Chat (32K)</option>
+                    <option value="THUDM/glm-4-9b-chat">THUDM/glm-4-9b-chat (128K)</option>
+                    <option value="THUDM/chatglm3-6b">THUDM/chatglm3-6b (32K)</option>
+                    <option value="01-ai/Yi-1.5-9B-Chat-16K">01-ai/Yi-1.5-9B-Chat-16K (16K)</option>
+                    <option value="01-ai/Yi-1.5-6B-Chat">01-ai/Yi-1.5-6B-Chat (4K)</option>
+                    <option value="internlm/internlm2_5-7b-chat">internlm/internlm2_5-7b-chat (32K)</option>
+                    <option value="google/gemma-2-9b-it">google/gemma-2-9b-it (8K)</option>
+                    <option value="meta-llama/Meta-Llama-3-8B-Instruct">meta-llama/Meta-Llama-3-8B-Instruct (8K)</option>
+                    <option value="meta-llama/Meta-Llama-3.1-8B-Instruct">meta-llama/Meta-Llama-3.1-8B-Instruct (32K)</option>
+                    <option value="mistralai/Mistral-7B-Instruct-v0.2">mistralai/Mistral-7B-Instruct-v0.2 (32K)</option>
+                </optgroup>
+                <optgroup label="Paid Models">
+                    <option value="Pro/Qwen/Qwen2-7B-Instruct">Pro/Qwen/Qwen2-7B-Instruct (32K) - ¥0.35/1M tokens</option>
+                    <option value="Pro/Qwen/Qwen2-1.5B-Instruct">Pro/Qwen/Qwen2-1.5B-Instruct (32K) - ¥0.14/1M tokens</option>
+                    <option value="Pro/Qwen/Qwen1.5-7B-Chat">Pro/Qwen/Qwen1.5-7B-Chat (32K) - ¥0.35/1M tokens</option>
+                    <option value="Pro/THUDM/glm-4-9b-chat">Pro/THUDM/glm-4-9b-chat (128K) - ¥0.60/1M tokens</option>
+                    <option value="Pro/THUDM/chatglm3-6b">Pro/THUDM/chatglm3-6b (32K) - ¥0.35/1M tokens</option>
+                    <option value="Pro/01-ai/Yi-1.5-9B-Chat-16K">Pro/01-ai/Yi-1.5-9B-Chat-16K (16K) - ¥0.42/1M tokens</option>
+                    <option value="Pro/01-ai/Yi-1.5-6B-Chat">Pro/01-ai/Yi-1.5-6B-Chat (4K) - ¥0.35/1M tokens</option>
+                </optgroup>
+            </select>
+        </div>
+        <button onclick="analyzeRepo()">Analyze Repository</button>
+        <div id="result"></div>
+    </div>
+
+    <div id="Settings" class="tabcontent">
+        <h2>API Settings</h2>
+        <div class="form-group">
+            <label for="github-token">GitHub Personal Access Token:</label>
+            <input type="password" id="github-token" placeholder="Enter your GitHub token">
+            <p class="api-key-hint">Don't have a token? <a href="https://github.com/settings/tokens" target="_blank" class="api-key-link">Create one here</a></p>
+        </div>
+        <div class="form-group">
+            <label for="api-key">SiliconFlow API Key:</label>
+            <input type="text" id="api-key" placeholder="Enter your SiliconFlow API key">
+            <p class="api-key-hint">Don't have an API key? <a href="https://cloud.siliconflow.cn/account/ak" target="_blank" class="api-key-link">Click here to get one</a></p>
+        </div>
+        <button onclick="saveSettings()">Save Settings</button>
+    </div>
+</div>
+
+<footer>
+    Powered by <a href="https://siliconflow.cn" target="_blank">SiliconCloud</a> and <a href="https://websim.ai" target="_blank">WebSim</a>
+</footer>
+
+<script>
+function openTab(evt, tabName) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+
+function saveSettings() {
+    const githubToken = document.getElementById('github-token').value;
+    const apiKey = document.getElementById('api-key').value;
+    
+    localStorage.setItem('githubToken', githubToken);
+    localStorage.setItem('apiKey', apiKey);
+    
+    alert('Settings saved successfully!');
+}
+
+async function analyzeRepo() {
+    const repoUrl = document.getElementById('repo-url').value;
+    const model = document.getElementById('model-select').value;
+    const resultDiv = document.getElementById('result');
+    
+    const githubToken = localStorage.getItem('githubToken');
+    const apiKey = localStorage.getItem('apiKey');
+    
+    if (!githubToken || !apiKey) {
+        alert('Please set your GitHub token and SiliconFlow API key in the Settings tab.');
+        return;
+    }
+
+    resultDiv.innerHTML = '<div class="loading">Analyzing repository</div>';
+
+    try {
+        // Parse the repo URL
+        const [, owner, repo] = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+
+        // Get repository contents
+        const contentsResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents`, {
+            headers: {
+                'Authorization': `token ${githubToken}`
+            }
+        });
+        const contents = await contentsResponse.json();
+
+        // Get README content
+        let readmeContent = '';
+        const readmeFile = contents.find(file => file.name.toLowerCase() === 'readme.md');
+        if (readmeFile) {
+            const readmeResponse = await fetch(readmeFile.download_url);
+            readmeContent = await readmeResponse.text();
+        }
+
+        // Prepare repo structure
+        const repoStructure = contents.map(item => `${item.type === 'dir' ? '📁' : '📄'} ${item.path}`);
+
+        // Call the AI analysis endpoint
+        const aiResponse = await fetch(`https://api.siliconflow.cn/v1/chat/completions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: model,
+                messages: [
+                    {role: "system", content: "You are an AI assistant specialized in analyzing GitHub repositories. Your task is to provide a comprehensive analysis of the repository structure and README content provided to you. Please structure your response in three paragraphs, focusing on different aspects of the repository, and conclude with a light-hearted roast about the project or its structure."},
+                    {role: "user", content: `Please analyze this GitHub repository:
+
+Repository Structure:
+${repoStructure.join('\n')}
+
+README Content:
+${readmeContent}
+
+Provide your analysis in three paragraphs, followed by a roast.`}
+                ]
+            })
+        });
+
+        const aiData = await aiResponse.json();
+
+        if (aiResponse.ok) {
+            const analysisOutput = aiData.choices[0].message.content;
+            const paragraphs = analysisOutput.split('\n\n');
+            
+            let formattedAnalysis = '';
+            for (let i = 0; i < 3; i++) {
+                formattedAnalysis += `<p>${paragraphs[i]}</p>`;
+            }
+            formattedAnalysis += `<div class="roast">${paragraphs[3]}</div>`;
+
+            resultDiv.innerHTML = `
+                <h2>Analysis Result</h2>
+                <div class="result-section">
+                    <h3>Repository Structure:</h3>
+                    <div class="repo-structure">${repoStructure.join('\n')}</div>
+                </div>
+                <div class="result-section">
+                    <h3>README Content:</h3>
+                    <div class="readme-content">${readmeContent}</div>
+                </div>
+                <div class="result-section">
+                    <h3>AI Analysis:</h3>
+                    <div class="ai-analysis">${formattedAnalysis}</div>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `<div class="result-section"><h3>Error</h3><p>${aiData.error || 'Unknown error occurred during AI analysis'}</p></div>`;
+        }
+    } catch (error) {
+        resultDiv.innerHTML = `<div class="result-section"><h3>Error</h3><p>${error.message}</p></div>`;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById("defaultOpen").click();
+    
+    const githubToken = localStorage.getItem('githubToken');
+    const apiKey = localStorage.getItem('apiKey');
+    
+    if (githubToken) {
+        document.getElementById('github-token').value = githubToken;
+    }
+    if (apiKey) {
+        document.getElementById('api-key').value = apiKey;
+    }
+});
+</script>
+</body></html>
