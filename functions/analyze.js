@@ -8,8 +8,15 @@ export async function onRequestGet(context) {
   const model = url.searchParams.get('model') || 'deepseek-ai/DeepSeek-V2-Chat';
   console.log('Received request with parameters:', { repoUrl, apiKey, model });
 
+  if (request.method === 'OPTIONS') {
+    return handleOptionsRequest();
+  }
+
   if (!repoUrl) {
-    return new Response('Please provide a repo URL as a query parameter, e.g., ?repo=owner/repo', { status: 400 });
+    return new Response('Please provide a repo URL as a query parameter, e.g., ?repo=owner/repo', {
+      status: 400,
+      headers: getCorsHeaders()
+    });
   }
 
   const repoName = repoUrl.replace('https://github.com/', '');
@@ -26,15 +33,34 @@ export async function onRequestGet(context) {
       repoStructure,
       aiAnalysis
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        ...getCorsHeaders(),
+        'Content-Type': 'application/json'
+      }
     });
   } catch (error) {
     console.error('Error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: getCorsHeaders()
     });
   }
+}
+
+function handleOptionsRequest() {
+  return new Response(null, {
+    status: 204,
+    headers: getCorsHeaders()
+  });
+}
+
+function getCorsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*', // Adjust this to specify allowed origins if necessary
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '3600' // Optional: cache preflight response for 1 hour
+  };
 }
 
 async function fetchReadmeContent(repoPath) {
