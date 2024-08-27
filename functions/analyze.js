@@ -7,7 +7,8 @@ async function handleRequest(request) {
     const repoUrl = url.searchParams.get('repo');
     const apiKey = url.searchParams.get('apiKey') || 'YOUR_DEFAULT_API_KEY';
     const model = url.searchParams.get('model') || 'deepseek-ai/DeepSeek-V2-Chat';
-    
+    console.log('Received request with parameters:', { repoUrl, apiKey, model });
+
     if (!repoUrl) {
         return new Response('Please provide a repo URL as a query parameter, e.g., ?repo=owner/repo', { status: 400 });
     }
@@ -57,6 +58,8 @@ async function handleRequest(request) {
         }
 
         const apiResult = await apiResponse.json();
+        console.log('External API response received:', apiResult);
+        
         return new Response(JSON.stringify(apiResult), { status: 200, headers: { 'Content-Type': 'application/json' } });
     } catch (error) {
         return new Response(`Error: ${error.message}`, { status: 500 });
