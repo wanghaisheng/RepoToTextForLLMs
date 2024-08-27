@@ -1,4 +1,3 @@
-
 // functions/api/github-analyzer.js
 
 export async function onRequestGet(context) {
@@ -18,123 +17,74 @@ export async function onRequestGet(context) {
   const repoPath = `${owner}/${repo}`;
 
   try {
-    const readmeContent = await fetchFromGitHub(`https://api.github.com/repos/${repoPath}/contents/README.md`);
-    const repoStructure = await traverseRepoIteratively(repoPath);
-    const fileContents = await getFileContentsIteratively(repoPath);
+    const readmeContent = await fetchReadmeContent(repoPath);
+    const repoStructure = await fetchRepoStructure(repoPath);
+    const aiAnalysis = await performAIAnalysis(readmeContent, repoStructure, apiKey, model);
 
-    const instructions = `
-    Prompt: Analyze the ${repoName} repository to understand its structure, purpose, and functionality. Follow these steps to study the codebase:
-    ...
-    README:
-    ${readmeContent}
-    Repository Structure:
-    ${repoStructure}
-    File Contents:
-    ${fileContents}
-    `;
-
-    const apiResponse = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: [{ role: 'user', content: instructions }],
-        stream: false,
-        max_tokens: 512,
-        temperature: 0.7,
-        top_p: 0.7,
-        top_k: 50,
-        frequency_penalty: 0.5,
-        n: 1
-      })
+    return new Response(JSON.stringify({
+      readmeContent,
+      repoStructure,
+      aiAnalysis
+    }), {
+      headers: { 'Content-Type': 'application/json' }
     });
-
-    if (!apiResponse.ok) {
-      throw new Error(`API request failed with status ${apiResponse.status}`);
-    }
-
-    const apiResult = await apiResponse.json();
-    console.log('External API response received:', apiResult);
-    
-    return new Response(JSON.stringify(apiResult), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (error) {
-    return new Response(`Error: ${error.message}`, { status: 500 });
+    console.error('Error:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
 
-async function fetchFromGitHub(url) {
-  const response = await fetch(url, {
-    headers: {
-      'Accept': 'application/vnd.github.v3+json',
-    },
+async function fetchReadmeContent(repoPath) {
+  const response = await fetch(`https://api.github.com/repos/${repoPath}/readme`, {
+    headers: { 'Accept': 'application/vnd.github.v3.raw' }
   });
   if (!response.ok) {
-    throw new Error(`GitHub API request failed with status ${response.status}`);
+    throw new Error('Failed to fetch README');
   }
-  return response.json();
+  return await response.text();
 }
 
-async function traverseRepoIteratively(repo) {
-  let structure = "";
-  const dirsToVisit = [{ path: "", url: `https://api.github.com/repos/${repo}/contents` }];
-  const dirsVisited = new Set();
-
-  while (dirsToVisit.length > 0) {
-    const { path, url } = dirsToVisit.pop();
-    dirsVisited.add(path);
-    const contents = await fetchFromGitHub(url);
-
-    for (const content of contents) {
-      if (content.type === "dir") {
-        if (!dirsVisited.has(content.path)) {
-          structure += `${path}/${content.name}/\n`;
-          dirsToVisit.push({ path: `${path}/${content.name}`, url: content.url });
-        }
-      } else {
-        structure += `${path}/${content.name}\n`;
-      }
-    }
+async function fetchRepoStructure(repoPath) {
+  const response = await fetch(`https://api.github.com/repos/${repoPath}/git/trees/main?recursive=1`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch repository structure');
   }
-  return structure;
+  const data = await response.json();
+  return data.tree
+    .filter(item => item.type === 'blob')
+    .map(item => item.path);
 }
 
-async function getFileContentsIteratively(repo) {
-  let fileContents = "";
-  const dirsToVisit = [{ path: "", url: `https://api.github.com/repos/${repo}/contents` }];
-  const dirsVisited = new Set();
-  const binaryExtensions = [
-    // List of binary file extensions...
-  ];
+async function performAIAnalysis(readmeContent, repoStructure, apiKey, model) {
+  const prompt = `Analyze this GitHub repository:
 
-  while (dirsToVisit.length > 0) {
-    const { path, url } = dirsToVisit.pop();
-    dirsVisited.add(path);
-    const contents = await fetchFromGitHub(url);
+README Content:
+${readmeContent}
 
-    for (const content of contents) {
-      if (content.type === "dir") {
-        if (!dirsVisited.has(content.path)) {
-          dirsToVisit.push({ path: `${path}/${content.name}`, url: content.url });
-        }
-      } else {
-        const fileExtension = content.name.split('.').pop();
-        if (binaryExtensions.includes(`.${fileExtension}`)) {
-          fileContents += `File: ${path}/${content.name}\nContent: Skipped binary file\n\n`;
-        } else {
-          fileContents += `File: ${path}/${content.name}\n`;
-          try {
-            const fileContent = await fetchFromGitHub(content.download_url);
-            fileContents += `Content:\n${await fileContent.text()}\n\n`;
-          } catch (error) {
-            fileContents += `Content: Skipped due to decoding error\n\n`;
-          }
-        }
-      }
-    }
+Repository Structure:
+${repoStructure.join('\n')}
+
+Provide a brief summary of the repository, its main features, and any notable aspects of its structure.`;
+
+  const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('AI analysis failed');
   }
-  return fileContents;
+
+  const result = await response.json();
+  return result.choices[0].message.content;
 }
