@@ -69,7 +69,9 @@ async function fetchRepoData() {
     console.log('Selected model:', selectedModel);
 
     try {
-        const response = await fetch(`/analyze?repo=${encodeURIComponent(repoUrl)}&apiKey=${encodeURIComponent(apiKey)}&model=${encodeURIComponent(selectedModel)}`);
+        // const response = await fetch(`/analyze?repo=${encodeURIComponent(repoUrl)}&apiKey=${encodeURIComponent(apiKey)}&model=${encodeURIComponent(selectedModel)}`);
+        const response = await fetch(`https://eatrepo.v2ray-tokyo.workers.dev/analyze?repo=${encodeURIComponent(repoUrl)}&apiKey=${encodeURIComponent(apiKey)}&model=${encodeURIComponent(selectedModel)}`);
+
         if (!response.ok) {
             throw new Error(`API request failed with status ${response.status}`);
         }
