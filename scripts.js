@@ -5,16 +5,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function populateModelDropdown() {
     const modelSelect = document.getElementById('model-select');
-    const apiKey = document.getElementById('api-key').value.trim() || 'YOUR_DEFAULT_API_KEY';
+    const apiKey = document.getElementById('api-key').value.trim();
 
-    console.log('Fetching models with API key:', apiKey);
+    // Debugging: Check the API key value
+    console.log('API Key from input:', apiKey);
+
+    // Use a default API key if none is provided
+    const usedApiKey = apiKey || 'YOUR_DEFAULT_API_KEY';
+    console.log('Using API Key:', usedApiKey);
 
     try {
         const response = await fetch('https://api.siliconflow.cn/v1/models', {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
+                'Authorization': `Bearer ${usedApiKey}`
             }
         });
 
