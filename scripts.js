@@ -4,7 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function populateModelDropdown() {
     const modelSelect = document.getElementById('model-select');
-    const apiKey = document.getElementById('api-key').value.trim() || 'YOUR_DEFAULT_API_KEY'; // Use actual default or valid key
+    const apiKey = document.getElementById('api-key').value.trim() || 'YOUR_DEFAULT_API_KEY'; // Replace with actual default key
+
+    console.log('Fetching models with API key:', apiKey); // Debugging line
 
     try {
         const response = await fetch('https://api.siliconflow.cn/v1/models', {
@@ -49,7 +51,7 @@ async function populateModelDropdown() {
 
 async function fetchRepoData() {
     const repoUrl = document.getElementById('repo-url').value.trim();
-    const apiKey = document.getElementById('api-key').value.trim() || 'YOUR_DEFAULT_API_KEY'; // Use actual default or valid key
+    const apiKey = document.getElementById('api-key').value.trim() || 'YOUR_DEFAULT_API_KEY'; // Replace with actual default key
     const selectedModel = document.getElementById('model-select').value;
 
     if (!repoUrl) {
@@ -57,8 +59,14 @@ async function fetchRepoData() {
         return;
     }
 
+    console.log('Analyzing repo with API key:', apiKey); // Debugging line
+    console.log('Selected model:', selectedModel); // Debugging line
+
     try {
         const response = await fetch(`/api/analyze?repo=${encodeURIComponent(repoUrl)}&apiKey=${encodeURIComponent(apiKey)}&model=${encodeURIComponent(selectedModel)}`);
+        if (!response.ok) {
+            throw new Error(`API request failed with status ${response.status}`);
+        }
         const result = await response.text();
         document.getElementById('result').textContent = result;
     } catch (error) {
