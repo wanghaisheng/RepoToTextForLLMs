@@ -1,0 +1,12 @@
+name = "your-project-name"
+type = "javascript"
+
+[build]
+command = "npm install"
+
+[workers_dev]
+compatibility_date = "2024-08-27"
+
+[[routes]]
+pattern = "*/analyze"
+script = "functions/analyze.js"
