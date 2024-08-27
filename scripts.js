@@ -9,7 +9,7 @@ async function populateModelDropdown() {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
-                'Authorization': 'Bearer YOUR_API_KEY' // Use your API key here
+                'Authorization': 'Bearer YOUR_API_KEY' // Replace with your default API key or handle this securely
             }
         });
 
