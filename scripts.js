@@ -1,4 +1,8 @@
+console.log('Scripts loaded');
+
 document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM fully loaded and parsed');
+
     populateModelDropdown();
 });
 
