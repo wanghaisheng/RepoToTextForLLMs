@@ -1,7 +1,11 @@
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded and parsed');
+    populateModelDropdown();
+});
+
 async function populateModelDropdown() {
     const modelSelect = document.getElementById('model-select');
-    const apiKeyInput = document.getElementById('api-key');
-    const apiKey = apiKeyInput.value.trim();
+    const apiKey = document.getElementById('api-key').value.trim();
 
     // Debugging: Check the API key value
     console.log('API Key from input:', apiKey);
@@ -48,5 +52,31 @@ async function populateModelDropdown() {
         option.value = '';
         option.textContent = 'Error loading models';
         modelSelect.appendChild(option);
+    }
+}
+
+async function fetchRepoData() {
+    const repoUrl = document.getElementById('repo-url').value.trim();
+    const apiKey = document.getElementById('api-key').value.trim() || 'YOUR_DEFAULT_API_KEY';
+    const selectedModel = document.getElementById('model-select').value;
+
+    if (!repoUrl) {
+        alert('Please enter a repository URL');
+        return;
+    }
+
+    console.log('Analyzing repo with API key:', apiKey);
+    console.log('Selected model:', selectedModel);
+
+    try {
+        const response = await fetch(`/api/analyze?repo=${encodeURIComponent(repoUrl)}&apiKey=${encodeURIComponent(apiKey)}&model=${encodeURIComponent(selectedModel)}`);
+        if (!response.ok) {
+            throw new Error(`API request failed with status ${response.status}`);
+        }
+        const result = await response.text();
+        document.getElementById('result').textContent = result;
+    } catch (error) {
+        console.error('Error fetching repo data:', error);
+        document.getElementById('result').textContent = 'Error fetching repo data. Check console for details.';
     }
 }
