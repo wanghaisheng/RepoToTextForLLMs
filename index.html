@@ -1,26 +1,231 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Repo Analyzer</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <h1>GitHub Repository Analyzer</h1>
-    <div id="auth-section">
-        <a href="/auth">Connect with GitHub</a>
+<html>
+  <head>
+    <base href="https://example.com/" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitHub Repository Analyzer</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f4f7f9;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      header {
+        background-color: #2c3e50;
+        color: #ecf0f1;
+        text-align: center;
+        padding: 1rem 0;
+      }
+      h1 {
+        margin: 0;
+      }
+      .form-container {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        margin-top: 2rem;
+      }
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+      }
+      input[type="text"],
+      input[type="url"],
+      select {
+        width: 100%;
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      button {
+        background-color: #3498db;
+        color: white;
+        padding: 0.7rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+      button:hover {
+        background-color: #2980b9;
+      }
+      .result {
+        margin-top: 2rem;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+      }
+      .loading {
+        text-align: center;
+        display: none;
+      }
+      .error {
+        color: #e74c3c;
+        background-color: #fdf5f5;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-top: 1rem;
+      }
+      .hint {
+        font-size: 0.9rem;
+        color: #7f8c8d;
+        margin-top: 0.25rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>GitHub Repository Analyzer</h1>
+    </header>
+    <div class="container">
+      <div class="form-container">
+        <form id="repo-form">
+          <div>
+            <label for="repo-url">GitHub Repository URL:</label>
+            <input
+              type="url"
+              id="repo-url"
+              required
+              placeholder="https://github.com/username/repository"
+            />
+          </div>
+          <div>
+            <label for="api-key">API Key:</label>
+            <input type="text" id="api-key" required />
+            <p class="hint">
+              Find your API key
+              <a href="https://cloud.siliconflow.cn/account/ak" target="_blank"
+                >here</a
+              >
+            </p>
+          </div>
+          <div>
+            <label for="model-select">Select Model:</label>
+            <select id="model-select" required>
+              <optgroup label="Free Models">
+                <option value="Qwen/Qwen1.5-7B-Chat">
+                  Qwen/Qwen1.5-7B-Chat (32K)
+                </option>
+                <option value="THUDM/glm-4-9b-chat">
+                  THUDM/glm-4-9b-chat (128K)
+                </option>
+                <option value="THUDM/chatglm3-6b">
+                  THUDM/chatglm3-6b (32K)
+                </option>
+                <option value="01-ai/Yi-1.5-9B-Chat-16K">
+                  01-ai/Yi-1.5-9B-Chat-16K (16K)
+                </option>
+                <option value="01-ai/Yi-1.5-6B-Chat">
+                  01-ai/Yi-1.5-6B-Chat (4K)
+                </option>
+                <option value="internlm/internlm2_5-7b-chat">
+                  internlm/internlm2_5-7b-chat (32K)
+                </option>
+                <option value="google/gemma-2-9b-it">
+                  google/gemma-2-9b-it (8K)
+                </option>
+                <option value="meta-llama/Meta-Llama-3-8B-Instruct">
+                  meta-llama/Meta-Llama-3-8B-Instruct (8K)
+                </option>
+                <option value="meta-llama/Meta-Llama-3.1-8B-Instruct">
+                  meta-llama/Meta-Llama-3.1-8B-Instruct (32K)
+                </option>
+                <option value="mistralai/Mistral-7B-Instruct-v0.2">
+                  mistralai/Mistral-7B-Instruct-v0.2 (32K)
+                </option>
+              </optgroup>
+              <optgroup label="Paid Models">
+                <option value="Pro/Qwen/Qwen2-7B-Instruct">
+                  Pro/Qwen/Qwen2-7B-Instruct (32K) - ¥0.35/1M tokens
+                </option>
+                <option value="Pro/Qwen/Qwen2-1.5B-Instruct">
+                  Pro/Qwen/Qwen2-1.5B-Instruct (32K) - ¥0.14/1M tokens
+                </option>
+                <option value="Pro/Qwen/Qwen1.5-7B-Chat">
+                  Pro/Qwen/Qwen1.5-7B-Chat (32K) - ¥0.35/1M tokens
+                </option>
+                <option value="Pro/THUDM/glm-4-9b-chat">
+                  Pro/THUDM/glm-4-9b-chat (128K) - ¥0.60/1M tokens
+                </option>
+                <option value="Pro/THUDM/chatglm3-6b">
+                  Pro/THUDM/chatglm3-6b (32K) - ¥0.35/1M tokens
+                </option>
+                <option value="Pro/01-ai/Yi-1.5-9B-Chat-16K">
+                  Pro/01-ai/Yi-1.5-9B-Chat-16K (16K) - ¥0.42/1M tokens
+                </option>
+                <option value="Pro/01-ai/Yi-1.5-6B-Chat">
+                  Pro/01-ai/Yi-1.5-6B-Chat (4K) - ¥0.35/1M tokens
+                </option>
+              </optgroup>
+            </select>
+          </div>
+          <button type="submit">Analyze Repository</button>
+        </form>
+      </div>
+      <div class="loading" id="loading">
+        <p>Analyzing repository... This may take a few moments.</p>
+      </div>
+      <div class="result" id="result"></div>
     </div>
-    <div id="repo-section">
-        <input type="text" id="repo-url" placeholder="Enter GitHub Repo URL">
-        <input type="text" id="api-key" placeholder="Enter API Key (Optional)">
-        <select id="model-select">
-            <!-- Options will be dynamically populated -->
-        </select>
-        <button onclick="fetchRepoData()">Analyze Repo</button>
-        <button onclick="populateModelDropdown()">Update Model List</button>
-        <div id="result"></div>
-    </div>
-    <script src="scripts.js"></script>
-</body>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("repo-form");
+        const loading = document.getElementById("loading");
+        const result = document.getElementById("result");
+
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const repoUrl = document.getElementById("repo-url").value;
+          const apiKey = document.getElementById("api-key").value;
+          const model = document.getElementById("model-select").value;
+
+          loading.style.display = "block";
+          result.innerHTML = "";
+
+          try {
+            const response = await fetch(
+              `/analyze?repo=${encodeURIComponent(
+                repoUrl
+              )}&apiKey=${encodeURIComponent(
+                apiKey
+              )}&model=${encodeURIComponent(model)}`
+            );
+            const data = await response.json();
+
+            if (response.ok) {
+              result.innerHTML = `
+                    <h2>Analysis Result</h2>
+                    <h3>Repository Structure:</h3>
+                    <pre>${data.repoStructure.join("\n")}</pre>
+                    <h3>README Content:</h3>
+                    <pre>${data.readmeContent}</pre>
+                    <h3>AI Analysis:</h3>
+                    <p>${data.aiAnalysis}</p>
+                `;
+            } else {
+              throw new Error(data.error || "Failed to analyze repository");
+            }
+          } catch (error) {
+            result.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+          } finally {
+            loading.style.display = "none";
+          }
+        });
+      });
+    </script>
+  </body>
 </html>
