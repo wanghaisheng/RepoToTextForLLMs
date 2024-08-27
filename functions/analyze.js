@@ -52,9 +52,137 @@ export default {
             ${fileContents}
             `;
             
-            return new Response(instructions, { status: 200, headers: { 'Content-Type': 'text/plain' } });
+            // Post instructions to the external API
+            const apiResponse = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer sk-nuibibsphocjpyqytwtqkvxzqyfypauaqhimfyekiktenlah',
+                },
+                body: JSON.stringify({
+                    model: 'deepseek-ai/DeepSeek-V2-Chat',
+                    messages: [
+                        { role: 'user', content: instructions }
+                    ],
+                    stream: false,
+                    max_tokens: 512,
+                    temperature: 0.7,
+                    top_p: 0.7,
+                    top_k: 50,
+                    frequency_penalty: 0.5,
+                    n: 1
+                })
+            });
+
+            if (!apiResponse.ok) {
+                throw new Error(`API request failed with status ${apiResponse.status}`);
+            }
+
+            const apiResult = await apiResponse.json();
+
+            // Return the API result
+            return new Response(JSON.stringify(apiResult), { status: 200, headers: { 'Content-Type': 'application/json' } });
         } catch (error) {
             return new Response(`Error: ${error.message}`, { status: 500 });
         }
     }
 };
+
+// Helper functions used in this code
+async function fetchFromGitHub(url) {
+    const response = await fetch(url, {
+        headers: {
+            'Accept': 'application/vnd.github.v3+json',
+        },
+    });
+    if (!response.ok) {
+        throw new Error(`GitHub API request failed with status ${response.status}`);
+    }
+    return response.json();
+}
+
+async function traverseRepoIteratively(repo) {
+    let structure = "";
+    const dirsToVisit = [{ path: "", url: `https://api.github.com/repos/${repo}/contents` }];
+    const dirsVisited = new Set();
+
+    while (dirsToVisit.length > 0) {
+        const { path, url } = dirsToVisit.pop();
+        dirsVisited.add(path);
+        const contents = await fetchFromGitHub(url);
+
+        for (const content of contents) {
+            if (content.type === "dir") {
+                if (!dirsVisited.has(content.path)) {
+                    structure += `${path}/${content.name}/\n`;
+                    dirsToVisit.push({ path: `${path}/${content.name}`, url: content.url });
+                }
+            } else {
+                structure += `${path}/${content.name}\n`;
+            }
+        }
+    }
+    return structure;
+}
+
+async function getFileContentsIteratively(repo) {
+    let fileContents = "";
+    const dirsToVisit = [{ path: "", url: `https://api.github.com/repos/${repo}/contents` }];
+    const dirsVisited = new Set();
+    const binaryExtensions = [
+        '.exe', '.dll', '.so', '.a', '.lib', '.dylib', '.o', '.obj',
+        '.zip', '.tar', '.tar.gz', '.tgz', '.rar', '.7z', '.bz2', '.gz', '.xz', '.z', '.lz', '.lzma', '.lzo', '.rz', '.sz', '.dz',
+        '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.odt', '.ods', '.odp',
+        '.png', '.jpg', '.jpeg', '.gif', '.mp3', '.mp4', '.wav', '.flac', '.ogg', '.avi', '.mkv', '.mov', '.webm', '.wmv', '.m4a', '.aac',
+        '.iso', '.vmdk', '.qcow2', '.vdi', '.vhd', '.vhdx', '.ova', '.ovf',
+        '.db', '.sqlite', '.mdb', '.accdb', '.frm', '.ibd', '.dbf',
+        '.jar', '.class', '.war', '.ear', '.jpi',
+        '.pyc', '.pyo', '.pyd', '.egg', '.whl',
+        '.deb', '.rpm', '.apk', '.msi', '.dmg', '.pkg', '.bin', '.dat', '.data',
+        '.dump', '.img', '.toast', '.vcd', '.crx', '.xpi', '.lockb', 'package-lock.json', '.svg',
+        '.eot', '.otf', '.ttf', '.woff', '.woff2',
+        '.ico', '.icns', '.cur',
+        '.cab', '.dmp', '.msp', '.msm',
+        '.keystore', '.jks', '.truststore', '.cer', '.crt', '.der', '.p7b', '.p7c', '.p12', '.pfx', '.pem', '.csr',
+        '.key', '.pub', '.sig', '.pgp', '.gpg',
+        '.nupkg', '.snupkg', '.appx', '.msix', '.msp', '.msu',
+        '.deb', '.rpm', '.snap', '.flatpak', '.appimage',
+        '.ko', '.sys', '.elf',
+        '.swf', '.fla', '.swc',
+        '.rlib', '.pdb', '.idb', '.pdb', '.dbg',
+        '.sdf', '.bak', '.tmp', '.temp', '.log', '.tlog', '.ilk',
+        '.bpl', '.dcu', '.dcp', '.dcpil', '.drc',
+        '.aps', '.res', '.rsrc', '.rc', '.resx',
+        '.prefs', '.properties', '.ini', '.cfg', '.config', '.conf',
+        '.DS_Store', '.localized', '.svn', '.git', '.gitignore', '.gitkeep',
+    ];
+
+    while (dirsToVisit.length > 0) {
+        const { path, url } = dirsToVisit.pop();
+        dirsVisited.add(path);
+        const contents = await fetchFromGitHub(url);
+
+        for (const content of contents) {
+            if (content.type === "dir") {
+                if (!dirsVisited.has(content.path)) {
+                    dirsToVisit.push({ path: `${path}/${content.name}`, url: content.url });
+                }
+            } else {
+                const fileExtension = content.name.split('.').pop();
+                if (binaryExtensions.includes(`.${fileExtension}`)) {
+                    fileContents += `File: ${path}/${content.name}\nContent: Skipped binary file\n\n`;
+                } else {
+                    fileContents += `File: ${path}/${content.name}\n`;
+                    try {
+                        const fileContent = await fetchFromGitHub(content.download_url);
+                        fileContents += `Content:\n${await fileContent.text()}\n\n`;
+                    } catch (error) {
+                        fileContents += `Content: Skipped due to decoding error\n\n`;
+                    }
+                }
+            }
+        }
+    }
+    return fileContents;
+}
